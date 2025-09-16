@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mindful — Avaliação Rápida</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root{
+      --accent-1:#51a3b5; 
+      --accent-2:#97ccaf; 
+      --muted:#6a7c85; 
+      --card-bg: rgba(255,255,255,0.92);
+    }
+    body { font-family: Inter, system-ui, sans-serif; background: linear-gradient(180deg,#f0fbfc,#eef6f6); min-height:100vh; color:#062428; transition: background .3s, color .3s; }
+    header { padding:1.25rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; max-width:1100px; margin:0 auto; }
+    .card-elegant { background:var(--card-bg); padding:1.25rem; border-radius:12px; box-shadow: 0 10px 30px rgba(10,20,30,0.06); transition: background .3s, color .3s, box-shadow .3s; }
+    .btn-gradient { background: linear-gradient(90deg,var(--accent-1),var(--accent-2)); color:white; border:none; padding:.6rem 1rem; border-radius:999px; font-weight:700; transition: transform .15s, box-shadow .15s; }
+    .btn-gradient:active { transform: scale(.98); }
+    .choice-item { cursor:pointer; border-radius:10px; padding:.9rem; transition: transform .15s, box-shadow .15s; background:transparent; border:1px solid rgba(6,36,40,0.06); }
+    .choice-item:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(6,36,40,0.06); }
+    .choice-item.selected { background: linear-gradient(90deg,var(--accent-1),var(--accent-2)); color:white; border:none; }
+
+    .progress-custom { height:14px; border-radius:20px; background: linear-gradient(90deg,#eee,#f3f6f6); overflow:hidden; }
+    .progress-custom > .bar { height:100%; background: linear-gradient(90deg,var(--accent-1),var(--accent-2)); width:0%; transition: width .6s cubic-bezier(.2,.9,.3,1); }
+
+    footer { padding:2rem 1rem; text-align:center; color:var(--muted); }
+
+   
+    body.dark { background: linear-gradient(180deg,#071623,#09232b); color:#e7f1f1; }
+    body.dark .card-elegant { background: rgba(20,30,40,0.9); box-shadow: 0 10px 30px rgba(0,0,0,0.5); color:#dff3f3; }
+    body.dark .muted { color:#9fb0b2; }
+
+    
+    .toast { opacity: 0.95; }
+
+  </style>
+</head>
+<body>
+
+  <header style="max-width:1100px; margin:0 auto;">
+    <div>
+      <a href="index.html" class="text-decoration-none fw-bold" aria-label="Voltar"><i class="bi bi-arrow-left"></i> Mindful</a>
+    </div>
+    <div class="d-flex gap-2">
+      <button id="btnTheme" class="btn btn-outline-secondary" title="Alternar tema"><i class="bi bi-moon-stars"></i></button>
+    </div>
+  </header>
+
+  <main style="max-width:1100px; margin:0 auto; padding:1rem;">
+    <div id="heroSection" class="card-elegant p-4 text-center">
+      <h2 class="h4 fw-bold mb-2">Avaliação Rápida</h2>
+      <p class="muted small mb-3">Responda 10 perguntas — leva apenas 2–3 minutos. Seus dados ficam no navegador.</p>
+      <button id="startBtn" class="btn btn-gradient">Começar</button>
+    </div>
+
+    <div id="wizard" class="d-none mt-4 card-elegant p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <span id="stepLabel" class="badge bg-light text-dark">Pergunta 1 de 10</span>
+          <div class="progress-custom mt-2">
+            <div class="bar" id="progressBar"></div>
+          </div>
+        </div>
+        <div>
+          <button id="prevBtn" class="btn btn-outline-secondary" disabled><i class="bi bi-arrow-left"></i></button>
+        </div>
+      </div>
+
+      <div id="questionArea" class="mt-3"></div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <button id="saveBtn" class="btn btn-outline-success" disabled><i class="bi bi-save"></i> Salvar</button>
+        <button id="nextBtn" class="btn btn-gradient">Próxima</button>
+      </div>
+    </div>
+
+    <div id="result" class="d-none mt-4 card-elegant p-4">
+      <h4 class="mb-2">Seu Resultado</h4>
+      <div class="d-flex gap-3 mb-3">
+        <div class="flex-fill text-center card-elegant p-3">
+          <p class="small muted mb-1">Pontuação</p>
+          <h3 id="scoreDisplay">--</h3>
+        </div>
+        <div class="flex-fill text-center card-elegant p-3">
+          <p class="small muted mb-1">Status</p>
+          <h3 id="statusDisplay">--</h3>
+        </div>
+      </div>
+
+      <div class="card-elegant p-3 mb-3">
+        <h6>Dica personalizada</h6>
+        <p id="tipArea" class="muted small">...</p>
+      </div>
+
+      <div class="card-elegant p-3 mb-3">
+        <h6>Histórico</h6>
+        <canvas id="historyChart" height="160"></canvas>
+      </div>
+
+      <div class="d-flex justify-content-center gap-2">
+        <button id="redoBtn" class="btn btn-outline-secondary">Refazer</button>
+        <button id="exportBtn" class="btn btn-gradient">Exportar (JSON)</button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <small>Dados armazenados localmente — Mindful não substitui um profissional.</small>
+  </footer>
+
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+    <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive">
+      <div class="d-flex">
+        <div id="toastBody" class="toast-body">Salvo!</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const QUESTIONS = [
+      'Qualidade do sono','Seu humor nos últimos dias','Nível de ansiedade','Interesse em atividades',
+      'Energia e disposição','Concentração','Alterações no apetite','Irritabilidade','Relacionamentos sociais',
+      'Impacto do estresse no dia a dia'
+    ];
+    const CHOICES = [
+      {score:0,label:'Excelente'},
+      {score:1,label:'Bom'},
+      {score:2,label:'Regular'},
+      {score:3,label:'Ruim'}
+    ];
+    const STORAGE_KEY = 'mindful_v2_history';
+    let answers = Array(QUESTIONS.length).fill(null), step = 0, chart = null;
+
+    const startBtn = document.getElementById('startBtn');
+    const wizard = document.getElementById('wizard');
+    const questionArea = document.getElementById('questionArea');
+    const stepLabel = document.getElementById('stepLabel');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const progressBar = document.getElementById('progressBar');
+    const saveBtn = document.getElementById('saveBtn');
+    const resultCard = document.getElementById('result');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const statusDisplay = document.getElementById('statusDisplay');
+    const tipArea = document.getElementById('tipArea');
+    const historyCanvas = document.getElementById('historyChart');
+    const toastEl = new bootstrap.Toast(document.getElementById('toast'));
+    const toastBody = document.getElementById('toastBody');
+    const btnTheme = document.getElementById('btnTheme');
+
+    (function(){
+      const saved = localStorage.getItem('mindful_theme');
+      if(saved==='dark') document.body.classList.add('dark');
+      else if(saved==='light') document.body.classList.remove('dark');
+      else if(window.matchMedia('(prefers-color-scheme: dark)').matches) document.body.classList.add('dark');
+      btnTheme.addEventListener('click', ()=>{
+        document.body.classList.toggle('dark');
+        localStorage.setItem('mindful_theme', document.body.classList.contains('dark')?'dark':'light');
+      });
+    })();
+
+    function renderQuestion(idx){
+      stepLabel.textContent = `Pergunta ${idx+1} de ${QUESTIONS.length}`;
+      progressBar.style.width = `${(idx/QUESTIONS.length)*100}%`;
+      const qHtml = `
+        <h5 class="fw-bold mb-3">${QUESTIONS[idx]}</h5>
+        <div class="row g-3">
+          ${CHOICES.map(c=>`
+            <div class="col-6 col-md-3">
+              <div class="choice-item ${answers[idx]===c.score?'selected':''}" data-score="${c.score}">
+                <div class="text-center">${c.label}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      `;
+      questionArea.innerHTML = qHtml;
+
+      questionArea.querySelectorAll('.choice-item').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const s=Number(el.dataset.score);
+          answers[idx]=s;
+          renderQuestion(idx);
+          saveBtn.disabled=false;
+        });
+      });
+
+      prevBtn.disabled = idx===0;
+      nextBtn.textContent = idx===QUESTIONS.length-1?'Finalizar':'Próxima';
+      nextBtn.disabled = answers[idx]===null;
+    }
+
+    function calcScore(){ return answers.reduce((acc,v)=>acc+(v||0),0); }
+    function classify(score){
+      const max = CHOICES[CHOICES.length-1].score*QUESTIONS.length;
+      const pct = (score/max)*100;
+      if(pct<=30) return {status:'Excelente', advice:'Continue com seus hábitos — você está bem.', color:'#2dbf6e'};
+      if(pct<=60) return {status:'Equilíbrio', advice:'Pequenos ajustes podem melhorar seu bem-estar.', color:'#51a3b5'};
+      if(pct<=85) return {status:'Atenção', advice:'Considere conversar com alguém de confiança ou um profissional.', color:'#f6c84c'};
+      return {status:'Cuidado', advice:'Procure apoio profissional. Você não precisa enfrentar isso sozinho.', color:'#f05c5c'};
+    }
+
+    function showResult(){
+      wizard.classList.add('d-none');
+      resultCard.classList.remove('d-none');
+      const score = calcScore();
+      const cl = classify(score);
+      scoreDisplay.textContent = score;
+      statusDisplay.textContent = cl.status;
+      tipArea.textContent = cl.advice;
+      renderHistoryChart();
+    }
+
+    function saveHistory(){
+      const score = calcScore();
+      const status = classify(score).status;
+      const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      history.push({date:new Date().toISOString(), score, status});
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+
+      confetti({particleCount:80, spread:70, origin:{y:0.6}});
+      toastBody.textContent='Resultado salvo com sucesso!';
+      toastEl.show();
+      renderHistoryChart();
+    }
+
+    function renderHistoryChart(){
+      const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if(!history.length){ historyCanvas.getContext('2d').clearRect(0,0,historyCanvas.width,historyCanvas.height); return; }
+      const labels = history.map(h=>new Date(h.date).toLocaleDateString());
+      const data = history.map(h=>h.score);
+      if(chart) chart.destroy();
+      chart=new Chart(historyCanvas,{
+        type:'line',
+        data:{labels,datasets:[{label:'Pontuação',data,borderColor:'#51a3b5',backgroundColor:'rgba(81,163,181,0.18)',fill:true,tension:0.4}]},
+        options:{scales:{y:{beginAtZero:true,max:CHOICES[CHOICES.length-1].score*QUESTIONS.length}}}
+      });
+    }
+
+    startBtn.addEventListener('click', ()=>{
+      startBtn.closest('.card-elegant').classList.add('d-none');
+      wizard.classList.remove('d-none');
+      step=0;
+      renderQuestion(step);
+    });
+
+    nextBtn.addEventListener('click', ()=>{
+      if(step<QUESTIONS.length-1){
+        step++;
+        renderQuestion(step);
+      } else {
+        progressBar.style.width='100%';
+        showResult();
+      }
+    });
+
+    prevBtn.addEventListener('click', ()=>{ if(step>0){ step--; renderQuestion(step); } });
+    saveBtn.addEventListener('click', saveHistory);
+    document.getElementById('redoBtn')?.addEventListener('click', ()=>location.reload());
+    document.getElementById('exportBtn')?.addEventListener('click', ()=>{
+      const data = localStorage.getItem(STORAGE_KEY)||'[]';
+      const blob = new Blob([data],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='mindful_history.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.addEventListener('DOMContentLoaded',()=>{ renderHistoryChart(); });
+    document.addEventListener('keydown',(e)=>{ if(!wizard.classList.contains('d-none')){ if(e.key==='ArrowRight') nextBtn.click(); if(e.key==='ArrowLeft') prevBtn.click(); } });
+
+  </script>
+
+</body>
+</html>
