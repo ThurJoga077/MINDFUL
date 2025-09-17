@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mindful — Login</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+:root {
+  --bg-1:#e6f2f5; --bg-2:#f0f8f5;
+  --text-dark:#0f2c38;
+  --card-radius:12px;
+}
+html,body{
+  height:100%; margin:0;
+  font-family:Inter,system-ui,Roboto,Arial;
+  color:var(--text-dark);
+  background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+}
+#authSection{
+  position:fixed; inset:0;
+  display:flex; justify-content:center; align-items:center;
+  padding:1rem;
+}
+.auth-card{
+  background:rgba(255,255,255,0.95);
+  padding:2rem;
+  border-radius:var(--card-radius);
+  max-width:400px; width:100%;
+  box-shadow:0 15px 40px rgba(0,0,0,0.1);
+}
+.btn-gradient{
+  background:linear-gradient(90deg,#51a3b5,#97ccaf);
+  color:white; border:none;
+  padding:.75rem 1.25rem;
+  border-radius:999px;
+  font-weight:700;
+}
+.btn-ghost{
+  background:transparent;
+  border:2px solid rgba(15,44,56,0.06);
+  padding:.6rem .9rem;
+  border-radius:10px;
+}
+.text-danger.small{font-size:.85rem;}
+</style>
+</head>
+<body>
+
+<div id="authSection">
+  <div class="auth-card">
+    <h3 class="text-center mb-3" id="formTitle">Mindful — Login</h3>
+
+    <div class="mb-3">
+      <label for="authUser" class="form-label">Usuário</label>
+      <input type="text" class="form-control" id="authUser">
+    </div>
+
+    <div class="mb-3">
+      <label for="authPass" class="form-label">Senha</label>
+      <input type="password" class="form-control" id="authPass">
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <button id="actionBtn" class="btn btn-gradient">Entrar</button>
+      <button id="toggleBtn" class="btn btn-ghost">Registrar</button>
+    </div>
+
+    <p id="authMsg" class="mt-2 small"></p>
+  </div>
+</div>
+
+<script>
+
+function getUsers(){
+  const saved = localStorage.getItem('users');
+  if(saved){
+    return JSON.parse(saved);
+  }else{
+    const def = [{user:'admin', pass:'123'}];
+    localStorage.setItem('users', JSON.stringify(def));
+    return def;
+  }
+}
+
+function saveUsers(arr){
+  localStorage.setItem('users', JSON.stringify(arr));
+}
+
+
+let isLogin = true;
+const title = document.getElementById('formTitle');
+const actionBtn = document.getElementById('actionBtn');
+const toggleBtn = document.getElementById('toggleBtn');
+const msg = document.getElementById('authMsg');
+const userInput = document.getElementById('authUser');
+const passInput = document.getElementById('authPass');
+
+
+toggleBtn.onclick = () => {
+  isLogin = !isLogin;
+  title.textContent = isLogin ? 'Mindful — Login' : 'Mindful — Registrar';
+  actionBtn.textContent = isLogin ? 'Entrar' : 'Criar conta';
+  toggleBtn.textContent = isLogin ? 'Registrar' : 'Já tenho conta';
+  msg.textContent = '';
+  msg.className = 'mt-2 small';
+};
+
+
+actionBtn.onclick = () => {
+  const user = userInput.value.trim();
+  const pass = passInput.value;
+  msg.textContent = '';
+  msg.className = 'mt-2 small text-danger';
+
+  if(!user || !pass){
+    msg.textContent = 'Preencha usuário e senha.';
+    return;
+  }
+
+  let users = getUsers();
+
+  if(isLogin){
+    const found = users.find(u => u.user === user && u.pass === pass);
+    if(found){
+      localStorage.setItem('currentUser', user);
+      window.location.href = 'index.html';  
+    }else{
+      msg.textContent = 'Usuário ou senha incorretos.';
+    }
+  }else{
+    if(users.some(u => u.user === user)){
+      msg.textContent = 'Usuário já existe.';
+      return;
+    }
+    users.push({user, pass});
+    saveUsers(users);
+    msg.className = 'mt-2 small text-success';
+    msg.textContent = 'Conta criada! Agora faça login.';
+    userInput.value = '';
+    passInput.value = '';
+    isLogin = true;
+    title.textContent = 'Mindful — Login';
+    actionBtn.textContent = 'Entrar';
+    toggleBtn.textContent = 'Registrar';
+  }
+};
+</script>
+</body>
+</html>
