@@ -125,7 +125,7 @@ actionBtn.onclick = () => {
     const found = users.find(u => u.user === user && u.pass === pass);
     if(found){
       localStorage.setItem('currentUser', user);
-      window.location.href = 'index.html';  
+      window.location.href = 'home.html';  
     }else{
       msg.textContent = 'Usuário ou senha incorretos.';
     }
@@ -149,3 +149,4 @@ actionBtn.onclick = () => {
 </script>
 </body>
 </html>
+
